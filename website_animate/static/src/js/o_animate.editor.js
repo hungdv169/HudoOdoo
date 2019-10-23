@@ -3,6 +3,16 @@ odoo.define('website_animate.o_animate_editor', function (require) {
 
 var sOptions = require('web_editor.snippets.options');
 
+function forceAnimation() {
+    var $els = $();
+    _.each(arguments, function (el) {
+        $els = $els.add(el);
+    });
+    $els.css('animation-name', 'dummy');
+    void $els[0].offsetWidth;
+    $els.css('animation-name', '');
+}
+
 //  Animations
 sOptions.registry.o_animate = sOptions.Class.extend({
     /**
@@ -39,24 +49,9 @@ sOptions.registry.o_animate = sOptions.Class.extend({
      * @override
      */
     selectClass: function (previewMode, value, $opt) {
-        var self = this;
         this._super.apply(this, arguments);
-
-        setTimeout(function () {
-            self.$target.addClass('o_animate_preview o_animate')
-                        .css('animation-name', '');
-        }, 0);
-
-        if (value) {
-            setTimeout(function () {
-                self.$target.addClass('o_animate_preview o_animate');
-            }, 500);
-        } else {
-            setTimeout(function () {
-                self.$target.removeClass('o_animate_preview o_animate');
-                self.trigger_up('cover_update');
-            }, 500);
-        }
+        forceAnimation(this.$target);
+        this.$target.toggleClass('o_animate_preview o_animate', !!value);
     },
 
     //--------------------------------------------------------------------------
@@ -87,7 +82,6 @@ var Common = sOptions.Class.extend({
     selectClass: function (previewMode, value, $opt) {
         this._super.apply(this, arguments);
 
-        var self = this;
         var $timeline_delay = this.$overlay.find('.timeline' + this.__animateOptionType + ' span[simulate="delay"]');
         var $timeline_duration = this.$overlay.find('.timeline' + this.__animateOptionType + ' span[simulate="duration"]');
 
@@ -96,26 +90,17 @@ var Common = sOptions.Class.extend({
             'animation-delay': '',
         });
 
-        var el_delay = parseFloat(this.$target.css('animation-delay').slice(0, -1));
         var el_duration = parseFloat(this.$target.css('animation-duration').slice(0, -1));
+        var el_delay = parseFloat(this.$target.css('animation-delay').slice(0, -1));
         var el_period = el_delay + el_duration;
 
         $timeline_duration.parent().width((el_duration*100)/el_period + '%');
         $timeline_delay.parent().width((el_delay*100)/el_period + '%');
+        $timeline_duration.css('animation-duration', el_duration + 's').css('animation-delay', el_delay + 's');
+        $timeline_delay.css('animation-duration', el_delay + 's');
 
-        this.$target.addClass('o_animate_preview').css('animation-name', 'dummy-none').css('animation-duration', '0s');
-
-        $timeline_duration.css('animation-name', 'dummy-none').css('animation-duration', el_duration + 's').css('animation-delay', el_delay  + 's');
-        $timeline_delay.css('animation-name', 'dummy-none').css('animation-duration', el_delay  + 's');
-
-        setTimeout(function () {
-            self.$target.css('animation-name', '').css('animation-duration', '');
-
-            $timeline_duration.css('animation-name', '');
-            $timeline_delay.css('animation-name', '');
-
-            self.trigger_up('cover_update');
-        }, 0);
+        forceAnimation($timeline_duration, $timeline_delay, this.$target);
+        this.$target.addClass('o_animate_preview');
     },
 });
 
